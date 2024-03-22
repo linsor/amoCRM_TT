@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\BaseController;
+use App\Http\Controllers\API\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,5 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/api', [BaseController::class, 'testConnect']);
-Route::get('/test', function () {
-});
+Route::get('/api', [BaseController::class, 'getToken']);
+Route::get('/test', [TestController::class,'index'])->name('test');

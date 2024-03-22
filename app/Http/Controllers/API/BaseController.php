@@ -3,12 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use AmoCRM\Client\AmoCRMApiClient;
-use League\OAuth2\Client\Token\AccessTokenInterface;
-use AmoCRM\Models\AccountModel;
-use AmoCRM\Exceptions\AmoCRMApiException;
-use Exception;
+
 
 
 class BaseController extends Controller
@@ -16,98 +11,59 @@ class BaseController extends Controller
     protected $subDomain = "kfamilion";
     protected $secretKey = "AVYH0SOZkNUqaFY0cCGUg1HOpU15R64GO9eXqF0FaLfg7jXOKGBjLeOirf41dqGF";
     protected $clientID = "e1dd72ef-b29f-49e9-939a-b2d802fe9b64";
-    protected $code = "def50200972ac6590001069a52f34180e08db19066d4d6c6083c5cef98e420bcf9b764bc0deca3bf9c4fafe5a1fb2b513a1cc5b746c5d4d061e59d9e41888290525c7b8e3a9bd0cb46603ab3127e6c1d09aefa28fa4e60fe7ac5d2cc42eba3391cbbed477ddd3d143a692198270b4b44e9b21b065ae2dcebcd6dc0a20fbea982698907e0515e13abf456f7d6316e28f37ddd10370adb684952baa3ea24f779bdb4f1d996907035295747cffa97cf94d6fc5649fb6565d7671531d9430711426b93e6f0d058a2e9b7458762e9643fa483d3ffa3e34a7bc75a1870c48cf13b9adc18ef717bc16b7e008d4959d0f37aa14bba24bf2578a2c685832b2c58b128ab0aacb3930a960ec4ef4404c6bf1457b186d42a4f17c031eedb562828b64adf2946c709486581a070032fd9beee1a0b6dae75a8fbbabdf5f6df6a2b3d7cef02f5553e78c593462efab651c3d3057817fdcb3d9471f48b8b4598698eb591a3875d631647b6a36eb3a2662638aef94e31addcab26e82f9cffd6f8a1d67f049207d69cee92f0b1003ce952608d93cf99b956a8bcf8d20c76d2e6cfb3f71bafe0b9988a6250617aec74f3e72f136e3748ed386e4931be889a817f5484d6b369ca1f9e399058470a8b693ad7839bbbcbbedbcdde385c4212b991b21f00b1eafe51a01e6bd62e7da08a1e";
-    protected $redirectUri  = 'http://localhost:8000/test';
+    protected $code = "def50200589b74dc9a7e6d7cba73fb220ed53cafa56b4f2ca143fd0bec5e62dfc7f7af9c1d8c971024e57ccf665bc438edab4eb685e1297037a437f7511c567569172b4018b0d6cd057c63918f5f6c25d1bfe513dd1e475682b440e53a03f0e33f944075ea680050f939936eef232a091d1f8bf5d4c0706886ccb7abc51808be7cf89c69aa82e56c049bdb5babdb72dea659960e6d31cb770361c962d46bdf55d1b39c013bf0ac03f6a21660cbe093d2bc82c60bbab150ce434830461f05f016fd27a77bfb5b924e83f25705afd0ca4b34106466c9e60197188c24acfaa8d99137a99a03ef2c31c0e69f87e04f67828ed394b6c47da353945af8576f2ffa5ed9605084b38fb0385b539f97e3469117ef50dc19bb503b02edd82573c6d96f0f92531178b08ae27f7340d7821fc4b372c127dc5de332ef94875374e8056cbcbb6742d5eae81c5ea72c19c6be8f06ad1fcb98248fbe069426042d995ff1466fb92b2ea91307668fd587760145d407ff2df3b14064a5fcd2d43a0e722a650287b793be26bb3184a959e1c77205db97c37408bf44b4af6b5e9f429e31a186b60a2c514f0cb36f2850906cd8b0dd119023e1293057bf8418dc2bbedeb4f1303130ccce436efece8f0c7e629bcf3e18706e5ea3691462d8486858705c718dbcf3dffdb1e357b9dde06a";
+    protected $redirectUri  = 'http://localhost:8000';
+    protected $accessToken;
 
-    public function testConnect () 
+    public function getToken () 
     {
-        $apiClient = new AmoCRMApiClient($this->clientID, $this->secretKey, $this->redirectUri);
+        $link = "https://$this->subDomain.amocrm.ru/oauth2/access_token";
 
-        $accessToken = $this->getToken($apiClient);
+        $data = [
+            'client_id'     => $this->clientID,
+            'client_secret' => $this->secretKey,
+            'grant_type'    => 'authorization_code',
+            'code'          => $this->code,
+            'redirect_uri'  => $this->redirectUri,
+          ];
+          $this->postConnect ($link, $data);
 
-        dd("А ТУТ НАХУЙ?");
-
-        $apiClient->setAccessToken($accessToken)
-    ->setAccountBaseDomain($accessToken->getValues()['baseDomain'])
-    ->onAccessTokenRefresh(
-        function (AccessTokenInterface $accessToken, string $baseDomain) {
-            saveToken(
-                [
-                    'accessToken' => $accessToken->getToken(),
-                    'refreshToken' => $accessToken->getRefreshToken(),
-                    'expires' => $accessToken->getExpires(),
-                    'baseDomain' => $baseDomain,
-                ]
-            );
+          return redirect(route('test'));
         }
-    );
+
+    public function postConnect ($link, $data) {
+        $curl = curl_init();
+        curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl,CURLOPT_USERAGENT,'amoCRM-oAuth-client/1.0');
+        curl_setopt($curl,CURLOPT_URL, $link);
+        curl_setopt($curl,CURLOPT_HTTPHEADER, ['Content-Type:application/json']);
+        curl_setopt($curl,CURLOPT_HEADER, false);
+        curl_setopt($curl,CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($curl,CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($curl,CURLOPT_SSL_VERIFYPEER, 1);
+        curl_setopt($curl,CURLOPT_SSL_VERIFYHOST, 2);
+        $out = curl_exec($curl);
+        $code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+        $code = (int)$code;
+        $errors = [
+            301 => 'Moved permanently.',
+            400 => 'Wrong structure of the array of transmitted data, or invalid identifiers of custom fields.',
+            401 => 'Not Authorized. There is no account information on the server. You need to make a request to another server on the transmitted IP.',
+            403 => 'The account is blocked, for repeatedly exceeding the number of requests per second.',
+            404 => 'Not found.',
+            500 => 'Internal server error.',
+            502 => 'Bad gateway.',
+            503 => 'Service unavailable.'
+        ];
+
+    if ($code < 200 || $code > 204) die( "Error $code. " . (isset($errors[$code]) ? $errors[$code] : 'Undefined error') );
 
 
-//Получим свойства аккаунта со всеми доступными свойствами
-try {
-    $account = $apiClient->account()->getCurrent(AccountModel::getAvailableWith());
-    var_dump($account->toArray());
-} catch (AmoCRMApiException $e) {
-    printError($e);
-}
-
-    }
-
-    private function getToken($apiClient) {
-
-
-    if (isset($_GET['referer'])) 
-    {
-        $apiClient->setAccountBaseDomain($_GET['referer']);
-    }
     
-    
-    if (!isset($_GET['code'])) {
-        $state = bin2hex(random_bytes(16));
-        $_SESSION['oauth2state'] = $state;
-        if (isset($_GET['button'])) {
-            echo $apiClient->getOAuthClient()->getOAuthButton(
-                [
-                    'title' => 'Установить интеграцию',
-                    'compact' => true,
-                    'class_name' => 'className',
-                    'color' => 'default',
-                    'error_callback' => 'handleOauthError',
-                    'state' => $state,
-                ]
-            );
-            die;
-        } else {
-            $authorizationUrl = $apiClient->getOAuthClient()->getAuthorizeUrl([
-                'state' => $state,
-                'mode' => 'post_message',
-            ]);
-            header('Location: ' . $authorizationUrl);
-            die;
-        }
-    } elseif (!isset($_GET['from_widget']) && (empty($_GET['state']) || empty($_SESSION['oauth2state']) || ($_GET['state'] !== $_SESSION['oauth2state']))) {
-        unset($_SESSION['oauth2state']);
-        exit('Invalid state');
-    }
-    
-    /**
-     * Ловим обратный код
-     */
-    try {
-        $accessToken = $apiClient->getOAuthClient()->getAccessTokenByCode($_GET['code']);
+    $Response = json_decode($out, true);
+    $this->accessToken = $Response['access_token'];
 
-        if (!$accessToken->hasExpired()) {
-            saveToken([
-                'accessToken' => $accessToken->getToken(),
-                'refreshToken' => $accessToken->getRefreshToken(),
-                'expires' => $accessToken->getExpires(),
-                'baseDomain' => $apiClient->getAccountBaseDomain(),
-            ]);
-        }
-    } catch (Exception $e) {
-        die((string)$e);
     }
 
-    }  
-  
 }
