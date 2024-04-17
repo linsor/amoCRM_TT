@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Token;
+use GuzzleHttp\Psr7\Message;
 
 class BaseController extends Controller
 {
@@ -13,10 +14,10 @@ class BaseController extends Controller
     protected $headers;
    
 
-    protected function amoCRMRequest($endpoint, $method = "GET", $body = null)
+    protected function amoCRMRequest($body = null, $endpoint = "/api/v4/leads", $method = "GET")
     {
 
-        $curl = curl_init();
+        $curl = curl_init();    
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_USERAGENT, 'amoCRM-API-client/1.0');
         curl_setopt($curl, CURLOPT_URL, "https://$this->subDomain.amocrm.ru" . $endpoint);
@@ -50,6 +51,28 @@ class BaseController extends Controller
             'Content-Type: application/json',
             'Authorization: Bearer ' . $this->token,
         ];
+    }
+
+    public function getLeadFrom($response) 
+    {
+        foreach ($response as $item){
+            if (isset($item['_embedded'])){
+                return $item['_embedded'];
+            }
+            else {
+                abort(404, "Сделка не найдена");
+            }
+        }
+    }
+
+    public function replaceNullWithZero ($data) : array 
+    {
+        foreach ($data as &$item) {
+            if ($item === null){
+                $item = '0';
+            }
+        }
+        return $data;
     }
 
 

@@ -12,60 +12,42 @@ class UpdateLeadController extends BaseController
     public function __invoke(UpdateLeadRequest $request, $id)
     {
 
-    $data = $request->validated();
+        $data = $request->validated();
+        $data = $this->replaceNullWithZero($data);
 
-    $this->replaceNullWithZero($data);
-
-    $method = "PATCH";
-
-    $token = getenv('AMOCRM_ACCESS_TOKEN');
+        $endpoint = "/api/v4/leads/{$id}";
+        $method = "PATCH";
     
-    $lead = [
-        [
-            'name' => $data['name'],
-            'price' => (int) $data['price'],
-            'custom_fields_values' => [
-                [
-                    'field_id' => 494331,
-                    'values' => [
-                        [
-                        'value' => (int) $data['costPrice']
-                        ]
+        $lead = [
+            [
+                'name' => $data['name'],
+                'price' => (int) $data['price'],
+                'custom_fields_values' => [
+                    [
+                        'field_id' => 494331,
+                        'values' => [
+                            [
+                            'value' => (int) $data['costPrice']
+                            ]
+                        ],
                     ],
-                ],
-                [
-                    'field_id' => 494333,
-                    'values' => [
-                        [
-                        'value' => (int) ($data['price'] - $data['costPrice'])
+                    [
+                        'field_id' => 494333,
+                        'values' => [
+                            [
+                            'value' => (int) ($data['price'] - $data['costPrice'])
+                            ]
                         ]
                     ]
                 ]
             ]
+        ];
 
-        ]
-    ];
+        $body = json_encode($lead);
+        $response = $this->amoCRMRequest($body, $endpoint, $method);
 
-    $body = json_encode($lead);
-
-    $endpoint = "/api/v4/leads/{$id}";
-
-    $response = $this->amoCRMRequest($endpoint, $method, $body);
-
-
-    dd($response);
-    
-    return redirect()->route('lead.index');
-}
-
-private function replaceNullWithZero ($data) : array 
-{
-    foreach ($data as &$item) {
-        if ($item === null){
-            $item = '0';
-        }
+        return redirect()->route('lead.index');
     }
-    return $data;
-}
+
 }
 

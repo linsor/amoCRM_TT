@@ -10,8 +10,6 @@ class CreateLeadsController extends Controller
 {
     public function __invoke(Request $request)
     {
-       // $token = Token::find(1);
-
         return view("amoAPI.create");
     }
 }

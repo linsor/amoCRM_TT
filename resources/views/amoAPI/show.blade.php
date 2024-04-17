@@ -16,6 +16,7 @@
                         Себестоимость: {{ $value['value'] }}
                         @endforeach
                     @endif
+
                 @endforeach
                 </p>
 
